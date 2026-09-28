@@ -1,0 +1,124 @@
+@import 'tailwindcss/base';
+@import 'tailwindcss/components';
+@import 'tailwindcss/utilities';
+
+body {
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background-color: #f1f8e9;
+  color: #111827;
+  overflow-x: hidden;
+}
+
+:root {
+  --trac-primary: #1b5e20;
+  --trac-primary-dark: #0d3b10;
+  --trac-primary-light: #2e7d32;
+  --trac-secondary: #f9a825;
+  --trac-secondary-dark: #f57f17;
+  --trac-accent: #33691e;
+  --trac-background: #f1f8e9;
+  --trac-focus: rgba(46, 125, 50, 0.35);
+}
+
+* {
+  border-color: #e5e7eb;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+button,
+a,
+input,
+select,
+textarea {
+  min-height: 2.75rem;
+}
+
+img,
+svg {
+  max-width: 100%;
+}
+
+textarea,
+p,
+td,
+th {
+  overflow-wrap: anywhere;
+}
+
+:focus-visible {
+  outline: 3px solid var(--trac-focus);
+  outline-offset: 2px;
+}
+
+.trac-button {
+  background: linear-gradient(105deg, var(--trac-primary) 0%, var(--trac-primary-light) 38%, var(--trac-secondary) 72%, var(--trac-secondary-dark) 100%);
+  background-size: 220% 100%;
+  background-position: 0% 50%;
+  color: white;
+  box-shadow: 0 8px 18px rgba(27, 94, 32, 0.22);
+  transition: transform 200ms ease, box-shadow 200ms ease, filter 200ms ease, background-position 350ms ease;
+}
+
+.trac-button:hover:not(:disabled) {
+  background-position: 100% 50%;
+  filter: brightness(1.06);
+  transform: translateY(-1px);
+  box-shadow: 0 12px 24px rgba(27, 94, 32, 0.28);
+}
+
+.trac-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.trac-button-outline {
+  border: 2px solid transparent;
+  background: linear-gradient(white, white) padding-box, linear-gradient(105deg, var(--trac-primary), var(--trac-secondary)) border-box;
+  color: var(--trac-primary);
+}
+
+.trac-button-outline:hover:not(:disabled) {
+  background: linear-gradient(105deg, var(--trac-primary), var(--trac-secondary)) padding-box, linear-gradient(105deg, var(--trac-primary), var(--trac-secondary)) border-box;
+  color: white;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .trac-button {
+    transition: none;
+  }
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #e8f1df;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #a5b7a0;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #6f8d6a;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}
