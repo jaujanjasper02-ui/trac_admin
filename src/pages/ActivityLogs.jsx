@@ -182,7 +182,7 @@ export default function ActivityLogs() {
       const doc = new jsPDF('landscape');
       doc.setFontSize(16);
       doc.setTextColor(122, 0, 25);
-      doc.text('MSU-TCTO Activity Logs Report', 14, 15);
+      doc.text('TRAC Activity Logs Report', 14, 15);
       doc.setFontSize(9);
       doc.setTextColor(100, 100, 100);
       doc.text(`Generated: ${new Date().toLocaleString()}`, 14, 23);

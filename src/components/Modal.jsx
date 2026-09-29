@@ -52,7 +52,7 @@ const Modal = ({ isOpen, onClose, title, children, size = 'md', footer }) => {
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto">
       <div className="fixed inset-0 bg-black/50" onClick={onClose} />
-      <div className="flex min-h-full items-end justify-center p-3 sm:items-center sm:p-4">
+      <div className="flex min-h-full items-center justify-center p-3 sm:p-4">
         <div
           ref={dialogRef}
           tabIndex="-1"

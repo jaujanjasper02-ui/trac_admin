@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import StatusBadge from '../components/StatusBadge';
 import Modal, { ConfirmationModal } from '../components/Modal';
+import StudentAvatar from '../components/StudentAvatar';
 import { 
   FaArrowLeft, 
   FaUser, 
@@ -37,6 +38,8 @@ const RequestDetails = () => {
   const [showRejectModal, setShowRejectModal] = useState(false);
   const [showClaimModal, setShowClaimModal] = useState(false);
   const [showOrImageModal, setShowOrImageModal] = useState(false);
+  const [showStudentPhotoModal, setShowStudentPhotoModal] = useState(false);
+  const [studentPhotoPreviewFailed, setStudentPhotoPreviewFailed] = useState(false);
   const [orImagePreview, setOrImagePreview] = useState(null);
   const [orSubmissions, setOrSubmissions] = useState([]);
   const [loadingOrHistory, setLoadingOrHistory] = useState(false);
@@ -368,7 +371,7 @@ const RequestDetails = () => {
           
           <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-              <div className="flex items-center gap-4">
+              <div className="flex min-w-0 items-start gap-4">
                 <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${
                   status === 'pending' ? 'bg-amber-100 text-amber-600' :
                   ['approved','or_submitted','or_confirmed','processing'].includes(status) ? 'bg-sky-100 text-sky-600' :
@@ -377,13 +380,13 @@ const RequestDetails = () => {
                 }`}>
                   <FaFileAlt className="text-xl" />
                 </div>
-                <div>
-                  <div className="flex items-center gap-3">
-                    <h1 className="text-xl font-bold text-gray-800">{request.documentType}</h1>
+                <div className="min-w-0">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <h1 className="break-words text-xl font-bold text-gray-800">{request.documentType}</h1>
                     <StatusBadge status={status} size="md" />
                   </div>
                   <div className="flex items-center gap-3 mt-1">
-                    <span className="font-mono text-sm bg-gray-100 px-3 py-1 rounded-lg text-gray-600">{request.id}</span>
+                  
                     <span className={`px-2.5 py-0.5 text-xs font-medium rounded-full ${getUserTypeBadge(request.studentType)}`}>
                       {request.studentType}
                     </span>
@@ -401,57 +404,60 @@ const RequestDetails = () => {
             </div>
             
             {/* Status Progress Bar */}
-            <div className="mt-6 pt-6 border-t border-gray-100">
-              <div className="flex items-center justify-between">
+            <div className="mt-6 border-t border-gray-100 pt-6">
+              <div className="grid grid-cols-7 gap-1">
                 {statusSteps.map((step, index) => {
                   const isCompleted = currentStepIndex >= index && status !== 'rejected';
                   const isCurrent = statusSteps[currentStepIndex]?.key === step.key;
                   return (
-                    <div key={step.key} className="flex items-center flex-1 last:flex-none">
-                      <div className={`flex items-center justify-center w-8 h-8 rounded-full text-xs font-bold transition ${
+                    <div key={step.key} className="relative flex min-w-0 flex-col items-center">
+                      {index < statusSteps.length - 1 && (
+                        <div className={`absolute left-1/2 top-4 h-0.5 w-full transition ${isCompleted ? 'bg-[#1B5E20]' : 'bg-gray-200'}`} />
+                      )}
+                      <div className={`relative z-10 flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold transition ${
                         isCompleted ? 'bg-[#1B5E20] text-white' : 
                         isCurrent ? 'bg-[#1B5E20]/20 text-[#1B5E20] ring-2 ring-[#1B5E20]' : 
                         'bg-gray-100 text-gray-400'
                       }`}>
                         {isCompleted ? <FaCheckCircle className="text-xs" /> : index + 1}
                       </div>
-                      {index < statusSteps.length - 1 && (
-                        <div className={`flex-1 h-0.5 mx-2 transition ${isCompleted ? 'bg-[#1B5E20]' : 'bg-gray-200'}`} />
-                      )}
+                      <span className="mt-2 w-full break-words text-center text-[10px] font-medium leading-tight text-gray-400">{step.label}</span>
                     </div>
                   );
                 })}
-              </div>
-              <div className="flex justify-between mt-2">
-                {statusSteps.map(step => (
-                  <span key={step.key} className="text-[10px] text-gray-400 font-medium">{step.label}</span>
-                ))}
               </div>
             </div>
           </div>
         </div>
 
         {/* Restricted Warning */}
-        {isRestricted && (
-          <div className="mb-6 bg-red-50 border-l-4 border-red-500 rounded-r-xl p-4">
-            <div className="flex items-start gap-3">
-              <FaBan className="text-red-500 mt-0.5 flex-shrink-0" />
-              <div>
-                <p className="font-bold text-red-800 text-sm">Restricted Document</p>
-                <p className="text-sm text-red-700 mt-1">
-                  <strong>{request.documentType}</strong> is not available for <strong>{request.studentType}</strong>. Only Alumni can request this document.
-                </p>
-                <button 
-                  onClick={handleRejectClick} 
-                  disabled={isRejectDisabled || updating}
-                  className="mt-3 px-4 py-1.5 bg-red-600 text-white text-xs font-medium rounded-lg hover:bg-red-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  Reject Request
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
+    {/*
+  // Restricted Warning
+  {isRestricted && (
+    <div className="mb-6 bg-red-50 border-l-4 border-red-500 rounded-r-xl p-4">
+      <div className="flex items-start gap-3">
+        <FaBan className="text-red-500 mt-0.5 flex-shrink-0" />
+        <div>
+          <p className="font-bold text-red-800 text-sm">
+            Restricted Document
+          </p>
+          <p className="text-sm text-red-700 mt-1">
+            <strong>{request.documentType}</strong> is not available for{" "}
+            <strong>{request.studentType}</strong>. Only Alumni can request
+            this document.
+          </p>
+          <button
+            onClick={handleRejectClick}
+            disabled={isRejectDisabled || updating}
+            className="mt-3 px-4 py-1.5 bg-red-600 text-white text-xs font-medium rounded-lg hover:bg-red-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            Reject Request
+          </button>
+        </div>
+      </div>
+    </div>
+  )}
+*/}
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           
@@ -465,7 +471,25 @@ const RequestDetails = () => {
               </div>
               <div className="p-6">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                  <InfoItem icon={<FaUserTag />} label="Full Name" value={request.studentName} />
+                  <div className="flex min-w-0 flex-col items-center gap-3 text-center sm:flex-row sm:items-center sm:text-left">
+                    {request.studentPhoto ? (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setStudentPhotoPreviewFailed(false);
+                          setShowStudentPhotoModal(true);
+                        }}
+                        title="View profile photo"
+                        aria-label={`View ${request.studentName || 'student'} profile photo`}
+                        className="shrink-0 cursor-zoom-in rounded-full focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1B5E20]"
+                      >
+                        <StudentAvatar name={request.studentName} src={request.studentPhoto} size="md" />
+                      </button>
+                    ) : (
+                      <StudentAvatar name={request.studentName} size="md" />
+                    )}
+                    <InfoItem icon={<FaUserTag />} label="Full Name" value={request.studentName} />
+                  </div>
                   <InfoItem icon={<FaIdCard />} label="Student ID" value={request.studentId} />
                   <InfoItem icon={<FaBuilding />} label="Institute" value={request.institute || request.department || 'N/A'} />
                   <InfoItem icon={<FaGraduationCap />} label="Course" value={request.course || 'N/A'} />
@@ -513,7 +537,7 @@ const RequestDetails = () => {
                       <img src={request.or_image_url} alt="Uploaded official receipt" className="max-h-72 w-full rounded-lg border border-gray-200 object-contain" />
                     </button>
                   ) : <p className="text-sm text-gray-500">No OR image available.</p>}
-                  <div className="grid grid-cols-2 gap-3 text-sm"><InfoItem label="OR Number" value={request.or_number} /><InfoItem label="Uploaded" value={request.or_uploaded_at ? new Date(request.or_uploaded_at).toLocaleString() : '—'} /></div>
+                  <div className="grid grid-cols-1 gap-3 text-sm sm:grid-cols-2"><InfoItem label="OR Number" value={request.or_number} /><InfoItem label="Uploaded" value={request.or_uploaded_at ? new Date(request.or_uploaded_at).toLocaleString() : '—'} /></div>
                   {request.or_rejection_reason && <div className="rounded-lg bg-red-50 border border-red-200 p-3 text-sm text-red-700"><strong>Previous reason:</strong> {request.or_rejection_reason}</div>}
                   {status === 'or_submitted' && <>
                     <button onClick={() => reviewOfficialReceipt('confirm')} disabled={updating} className="w-full rounded-lg bg-[#2E7D32] px-4 py-3 font-semibold text-white disabled:opacity-60">Confirm OR</button>
@@ -760,6 +784,26 @@ const RequestDetails = () => {
           alt={orImagePreview?.title || 'Official receipt'}
           className="mx-auto max-h-[75vh] w-full object-contain"
         />
+      </Modal>
+
+      <Modal
+        isOpen={showStudentPhotoModal}
+        onClose={() => setShowStudentPhotoModal(false)}
+        title={`${request.studentName || 'Student'} Profile Photo`}
+        size="xl"
+      >
+        {studentPhotoPreviewFailed ? (
+          <div className="flex justify-center">
+            <StudentAvatar name={request.studentName} size="md" />
+          </div>
+        ) : (
+          <img
+            src={request.studentPhoto}
+            alt={`${request.studentName || 'Student'} profile photo`}
+            onError={() => setStudentPhotoPreviewFailed(true)}
+            className="mx-auto max-h-[75vh] w-full object-contain"
+          />
+        )}
       </Modal>
     </div>
   );

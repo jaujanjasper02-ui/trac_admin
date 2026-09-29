@@ -21,6 +21,7 @@ import {
   FaRegFileAlt,
   FaSearchPlus
 } from 'react-icons/fa';
+import StudentAvatar from '../components/StudentAvatar';
 
 // ============================================
 // STATUS BADGE COMPONENT
@@ -429,9 +430,12 @@ const Requests = () => {
             <h1 className="text-2xl font-bold bg-gradient-to-r from-[#1B5E20] to-[#F9A825] bg-clip-text text-transparent">Document Requests</h1>
             <p className="text-sm text-gray-500 mt-0.5">Manage and track all student document requests</p>
           </div>
-          <button onClick={fetchRequests} className="trac-button rounded-xl px-4 py-2 text-sm font-medium">
-            Refresh
-          </button>
+     <button
+  onClick={fetchRequests}
+  className="trac-button rounded-xl px-2.5 py-2 text-sm font-medium sm:px-4"
+>
+  Refresh
+</button>
         </div>
 
         {/* Now Serving & Queue Info */}
@@ -462,7 +466,7 @@ const Requests = () => {
             <button
               key={status}
               onClick={() => handleFilterChange(status)}
-              className={`px-3 py-1.5 text-sm font-medium rounded-lg transition ${
+              className={`shrink-0 whitespace-nowrap px-3 py-1.5 text-sm font-medium rounded-lg transition ${
                 filter === status
                   ? status === 'all' ? 'bg-[#1B5E20] text-white' :
                     status === 'pending' ? 'bg-amber-500 text-white' :
@@ -473,7 +477,7 @@ const Requests = () => {
                   : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'
               }`}
             >
-              {status === 'all' ? 'All' : status.charAt(0).toUpperCase() + status.slice(1)}
+              {status === 'all' ? 'All' : status.replace(/_/g, ' ').replace(/\b\w/g, character => character.toUpperCase())}
             </button>
           ))}
         </div>
@@ -497,9 +501,84 @@ const Requests = () => {
           </div>
         </div>
 
-        {/* Table */}
+        {/* Mobile request cards */}
+        <div className="space-y-3 lg:hidden">
+          {processedRequests.length === 0 ? (
+            <div className="rounded-lg border border-gray-200 bg-white px-4 py-12 text-center">
+              <FaFileAlt className="text-gray-300 text-3xl mx-auto mb-2" />
+              <p className="text-gray-500">No requests found</p>
+            </div>
+          ) : processedRequests.map((request) => {
+            const restricted = isRestrictedDocument(request.document, request.studentType);
+            const canProcess = canProcessRequest(request);
+            const isNextInLine = request.queue_number === computedNextInLine && request.displayDate === earliestActiveDate;
+            const isBlocked = !canProcess && ['or_submitted','or_confirmed','processing'].includes(request.status);
+            const dateLabel = formatDisplayDate(request.date, request.displayDate);
+            const isOldDate = request.displayDate < todayLocal && ['pending','approved','or_submitted','or_rejected','or_confirmed','processing'].includes(request.status);
+
+            return (
+              <article
+                key={request.id}
+                role={isBlocked ? undefined : 'button'}
+                tabIndex={isBlocked ? undefined : 0}
+                onClick={() => handleRowClick(request.id, isBlocked)}
+                onKeyDown={(event) => {
+                  if (!isBlocked && (event.key === 'Enter' || event.key === ' ')) {
+                    event.preventDefault();
+                    handleRowClick(request.id, false);
+                  }
+                }}
+                className={`rounded-xl border bg-white p-4 shadow-sm transition ${
+                  isBlocked ? 'cursor-not-allowed border-gray-200' : 'cursor-pointer border-gray-200 hover:border-[#2E7D32]/40 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-[#2E7D32]/30'
+                } ${restricted ? 'border-rose-200 bg-rose-50/30' : ''}`}
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <span className={`inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-sm font-bold ${
+                    isNextInLine ? 'bg-emerald-500 text-white' : isBlocked ? 'bg-gray-200 text-gray-400' : 'bg-gray-100 text-gray-700'
+                  }`}>#{request.queue_number}</span>
+                  <StatusBadge status={request.status} />
+                </div>
+                <div className="mt-3 flex min-w-0 flex-col items-center text-center">
+                  <StudentAvatar name={request.student} src={request.studentPhoto} />
+                  <p className="mt-2 max-w-full truncate text-sm font-semibold text-gray-800">{request.student}</p>
+                  <p className="text-xs text-gray-400">{request.id} · {request.studentType}</p>
+                </div>
+
+                <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
+                  <div className="min-w-0">
+                    <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-400">Document</p>
+                    <p className="mt-1 break-words font-medium text-gray-800">{request.document}</p>
+                    {restricted && <p className="mt-1 text-xs text-rose-500">Restricted for students</p>}
+                  </div>
+                  <div>
+                    <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-400">Requested</p>
+                    <p className="mt-1 flex items-center gap-1 text-gray-600"><FaCalendarDay className="h-3 w-3 text-gray-400" />{dateLabel}</p>
+                    <p className="mt-1 text-xs text-gray-400">Copies: {request.copies}</p>
+                  </div>
+                </div>
+
+                {currentUser.role === 'super_admin' && (
+                  <div className="mt-3 border-t border-gray-100 pt-3">
+                    <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-400">Institute / Course</p>
+                    <p className="mt-1 text-sm font-medium text-[#1B5E20]">{request.institute || request.department || 'N/A'}</p>
+                    <p className="text-xs text-gray-500">{request.course || 'Course not listed'}</p>
+                  </div>
+                )}
+
+                <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-gray-100 pt-3">
+                  {isBlocked && <span className="inline-flex items-center gap-1 text-xs text-gray-400"><FaLock className="h-3 w-3" />{isOldDate ? 'Yesterday' : 'Locked'}</span>}
+                  {isNextInLine && <span className="rounded bg-emerald-100 px-1.5 py-0.5 text-xs text-emerald-700">Next in line</span>}
+                  {request.isOverflow && <span className="inline-flex items-center gap-1 rounded bg-red-100 px-1.5 py-0.5 text-xs text-red-700"><FaExclamationCircle className="h-3 w-3" />Overflow</span>}
+                  {!isBlocked && <span className="ml-auto inline-flex items-center gap-1 rounded-lg bg-blue-50 px-2 py-1.5 text-xs font-medium text-blue-600"><ViewDetailsIcon className="h-4 w-4" />View details</span>}
+                </div>
+              </article>
+            );
+          })}
+        </div>
+
+        {/* Desktop table */}
         <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
-          <div className="overflow-x-auto">
+          <div className="hidden overflow-x-auto lg:block">
             <table className="w-full">
               <thead>
                 <tr className="bg-gray-50 border-b border-gray-200">
@@ -509,11 +588,11 @@ const Requests = () => {
                     <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500">Institute / Course</th>
                   )}
                   <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500">Name</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500">Type</th>
+                  <th className="w-32 px-4 py-3 text-left text-xs font-semibold text-gray-500">Type</th>
                   <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500">Document</th>
-                  <th className="px-4 py-3 text-center text-xs font-semibold text-gray-500">Date</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500">Status</th>
-                  <th className="px-4 py-3 text-center text-xs font-semibold text-gray-500">Actions</th>
+                  <th className="w-32 px-4 py-3 text-center text-xs font-semibold text-gray-500">Date</th>
+                  <th className="w-40 px-4 py-3 text-left text-xs font-semibold text-gray-500">Status</th>
+                  <th className="w-28 px-4 py-3 text-center text-xs font-semibold text-gray-500">Actions</th>
                  </tr>
               </thead>
               <tbody>
@@ -575,22 +654,27 @@ const Requests = () => {
                           </td>
                         )}
                         <td className="px-4 py-3">
-                          <div className="text-sm font-medium text-gray-800">{request.student}</div>
-                          <div className="text-xs text-gray-400">Copies: {request.copies}</div>
+                          <div className="flex items-center gap-2.5">
+                            <StudentAvatar name={request.student} src={request.studentPhoto} />
+                            <div className="min-w-0">
+                              <div className="text-sm font-medium text-gray-800">{request.student}</div>
+                              <div className="text-xs text-gray-400">Copies: {request.copies}</div>
+                            </div>
+                          </div>
                         </td>
-                        <td className="px-4 py-3">{getUserTypeBadge(request.studentType)}</td>
+                        <td className="whitespace-nowrap px-4 py-3">{getUserTypeBadge(request.studentType)}</td>
                         <td className="px-4 py-3">
                           <div className="text-sm text-gray-800">{request.document}</div>
                           {restricted && <div className="text-xs text-rose-500">Restricted for students</div>}
                         </td>
-                        <td className="px-4 py-3 text-sm text-gray-500 text-center">
-                          <div className="flex items-center justify-center gap-1">
+                        <td className="whitespace-nowrap px-4 py-3 text-center text-sm text-gray-500">
+                          <div className="flex items-center justify-center gap-1 whitespace-nowrap">
                             <FaCalendarDay className="text-gray-400 w-3 h-3" />
                             {dateLabel}
                           </div>
                         </td>
-                        <td className="px-4 py-3"><StatusBadge status={request.status} /></td>
-                        <td className="px-4 py-3 text-center">
+                        <td className="whitespace-nowrap px-4 py-3"><StatusBadge status={request.status} /></td>
+                        <td className="whitespace-nowrap px-4 py-3 text-center">
                           {/* View button - still here for clarity, but row click also works */}
                           {!isBlocked && (
                             <div className="inline-flex items-center justify-center gap-1.5 px-2 py-1.5 bg-blue-50 text-blue-600 rounded-lg transition group">
